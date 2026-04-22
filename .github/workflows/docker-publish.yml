@@ -1,0 +1,42 @@
+name: Docker
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: ~
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: extrality/docker-dind-debian
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Create image ID
+        run: |
+          echo "IMAGE_TAG=$(date --utc '+%g-%m-%dT%H-%M')" | tee -a $GITHUB_ENV
+          echo "IMAGE_PATH=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tee -a $GITHUB_ENV
+      - name: Build and push Docker image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }},${{ env.IMAGE_PATH }}:latest
+          labels: ${{ steps.meta.outputs.labels }}
