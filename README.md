@@ -13,5 +13,9 @@ Host is required to have the NVIDIA container toolkit installed and set up.
 Privileged mode is required like any other DinD container with root requirement.
 
 ```bash
-docker run --device nvidia.com/gpu=all -it --privileged ghcr.io/extrality/docker-dind-debian:latest
+docker run -it --privileged \
+    --device nvidia.com/gpu=all \
+    -v /usr/bin/nvidia-ctk:/usr/bin/nvidia-ctk \
+    -v /usr/bin/nvidia-cdi-hook:/usr/bin/nvidia-cdi-hook \
+    ghcr.io/extrality/docker-dind-debian:latest
 ```
